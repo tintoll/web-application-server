@@ -16,7 +16,25 @@
 
 ### 요구사항 1 - http://localhost:8080/index.html로 접속시 응답
 * 
-
+```java
+		BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            String line = null;
+            int lineCount = 0;
+            byte[] body = null;
+            
+            while( !"".equals(line = br.readLine())){
+            		if(lineCount == 0) {
+            			String[] array = line.split(" ");
+            			if(array[1].equals("/index.html")) {
+            				// 파일을 읽는다. 
+            				File file = new File("./webapp"+array[1]);
+            				body =Files.readAllBytes(file.toPath());
+            			}
+            		}
+            		lineCount++;
+            		if(line == null) return;
+            }
+```
 ### 요구사항 2 - get 방식으로 회원가입
 * 
 
