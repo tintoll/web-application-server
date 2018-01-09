@@ -10,9 +10,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import model.User;
+import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -30,10 +34,10 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             DataOutputStream dos = new DataOutputStream(out);
-            
-            // 요구사항1 - index.html 파일을 읽어 클라이언트에 응답한다. 
+
+            // 요구사항1 - index.html 파일을 읽어 클라이언트에 응답한다.
             // http://localhost:8080/index.html  <- 주소를 캐치해야한다.
-            // 요청헤더 내용 
+            // 요청헤더 내용
             /*
              * GET /index.html HTTP/1.1
              * Host: localhost:8080
@@ -44,14 +48,30 @@ public class RequestHandler extends Thread {
             String line = null;
             int lineCount = 0;
             byte[] body = null;
-            
+
             while( !"".equals(line = br.readLine())){
             		if(lineCount == 0) {
             			String[] array = line.split(" ");
-            			if(array[1].equals("/index.html")) {
-            				// 파일을 읽는다. 
-            				File file = new File("./webapp"+array[1]);
-            				body =Files.readAllBytes(file.toPath());
+
+            			if(!array[1].equals("/")) {
+
+            				// 회원가입 저장 처리 URL인
+            				if(array[1].contains("/user/create")) {
+            					String query = array[1].substring(array[1].indexOf("?")+1, array[1].length());
+            					Map<String, String> map = HttpRequestUtils.parseQueryString(query);
+            					User user = new User(map.get("userId"),
+            							map.get("password"),
+            							map.get("name"),
+            							map.get("email"));
+
+
+            					log.debug("User : {}", user);
+
+            				} else {
+            					// 파일을 읽는다.
+            					File file = new File("./webapp"+array[1]);
+            					body =Files.readAllBytes(file.toPath());
+            				}
             			}
             		}
             		lineCount++;
