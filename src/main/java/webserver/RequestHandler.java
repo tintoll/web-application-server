@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import model.User;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -45,37 +46,39 @@ public class RequestHandler extends Thread {
              * ...
              */
             BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-            String line = null;
-            int lineCount = 0;
             byte[] body = null;
 
+            String line = br.readLine();
+
+    		    String[] array = line.split(" ");
+            String action = array[0];
+            String path = array[1];
+            if(action.equals("GET") && !path.equals("/")) {
+            		// 파일을 읽는다.
+				File file = new File("./webapp"+array[1]);
+				body =Files.readAllBytes(file.toPath());
+            }
+
+            int contentLength = 0;
             while( !"".equals(line = br.readLine())){
-            		if(lineCount == 0) {
-            			String[] array = line.split(" ");
-
-            			if(!array[1].equals("/")) {
-
-            				// 회원가입 저장 처리 URL인
-            				if(array[1].contains("/user/create")) {
-            					String query = array[1].substring(array[1].indexOf("?")+1, array[1].length());
-            					Map<String, String> map = HttpRequestUtils.parseQueryString(query);
-            					User user = new User(map.get("userId"),
-            							map.get("password"),
-            							map.get("name"),
-            							map.get("email"));
-
-
-            					log.debug("User : {}", user);
-
-            				} else {
-            					// 파일을 읽는다.
-            					File file = new File("./webapp"+array[1]);
-            					body =Files.readAllBytes(file.toPath());
-            				}
+	            	if(action.equals("POST") && path.equals("/user/create")) {
+            			String[] arr = line.split(":");
+            			if(arr[0].equals("Content-Length")) {
+            				contentLength = Integer.parseInt(arr[1].substring(1, arr[1].length()));
             			}
-            		}
-            		lineCount++;
+	            }
+
             		if(line == null) return;
+            }
+
+            if(action.equals("POST") && path.equals("/user/create")) {
+            		String queryString = IOUtils.readData(br, contentLength);
+            		Map<String, String> map = HttpRequestUtils.parseQueryString(queryString);
+				User user = new User(map.get("userId"),
+						map.get("password"),
+						map.get("name"),
+						map.get("email"));
+				log.debug("User : {}", user);
             }
 
 
