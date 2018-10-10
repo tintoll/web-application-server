@@ -34,57 +34,28 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            DataOutputStream dos = new DataOutputStream(out);
 
-            // 요구사항1 - index.html 파일을 읽어 클라이언트에 응답한다.
-            // http://localhost:8080/index.html  <- 주소를 캐치해야한다.
-            // 요청헤더 내용
-            /*
-             * GET /index.html HTTP/1.1
-             * Host: localhost:8080
-             * Connection: keep-alive
-             * ...
-             */
-            BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-            byte[] body = null;
-
+            BufferedReader br = new BufferedReader((new InputStreamReader(in, "UTF-8")));
             String line = br.readLine();
 
-    		    String[] array = line.split(" ");
-            String action = array[0];
-            String path = array[1];
-            if(action.equals("GET") && !path.equals("/")) {
-            		// 파일을 읽는다.
-				File file = new File("./webapp"+array[1]);
-				body =Files.readAllBytes(file.toPath());
+            String [] tokens = line.split(" ");
+
+            log.debug("request line : {} ", line);
+
+            if(line == null) {
+                return;
             }
 
-            int contentLength = 0;
-            while( !"".equals(line = br.readLine())){
-	            	if(action.equals("POST") && path.equals("/user/create")) {
-            			String[] arr = line.split(":");
-            			if(arr[0].equals("Content-Length")) {
-            				contentLength = Integer.parseInt(arr[1].substring(1, arr[1].length()));
-            			}
-	            }
-
-            		if(line == null) return;
+            while(!line.equals("")) {
+                line = br.readLine();
+                log.debug("header : {} ",line);
             }
 
-            if(action.equals("POST") && path.equals("/user/create")) {
-            		String queryString = IOUtils.readData(br, contentLength);
-            		Map<String, String> map = HttpRequestUtils.parseQueryString(queryString);
-				User user = new User(map.get("userId"),
-						map.get("password"),
-						map.get("name"),
-						map.get("email"));
-				log.debug("User : {}", user);
-            }
-
-
-            if(body == null) body = "Hello World !!!!".getBytes();
+            DataOutputStream dos = new DataOutputStream(out);
+            byte[] body = Files.readAllBytes(new File("./webapp"+tokens[1]).toPath());
             response200Header(dos, body.length);
             responseBody(dos, body);
+
         } catch (IOException e) {
             log.error(e.getMessage());
         }
