@@ -37,24 +37,36 @@ public class RequestHandler extends Thread {
 
             BufferedReader br = new BufferedReader((new InputStreamReader(in, "UTF-8")));
             String line = br.readLine();
-
-            String [] tokens = line.split(" ");
-
-            log.debug("request line : {} ", line);
-
             if(line == null) {
                 return;
             }
+
+            String [] tokens = line.split(" ");
+            log.debug("request line : {} ", line);
 
             while(!line.equals("")) {
                 line = br.readLine();
                 log.debug("header : {} ",line);
             }
 
-            DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = Files.readAllBytes(new File("./webapp"+tokens[1]).toPath());
-            response200Header(dos, body.length);
-            responseBody(dos, body);
+            String url = tokens[1];
+            log.debug("url : {}", url);
+            if(url.startsWith("/user/create")) {
+                int index = url.indexOf("?");
+                String queryString = url.substring(index+1);
+                Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
+                User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+                log.debug(" User : {} ", user);
+
+            } else {
+                DataOutputStream dos = new DataOutputStream(out);
+                byte[] body = Files.readAllBytes(new File("./webapp"+url).toPath());
+                response200Header(dos, body.length);
+                responseBody(dos, body);
+            }
+
+
+
 
         } catch (IOException e) {
             log.error(e.getMessage());
