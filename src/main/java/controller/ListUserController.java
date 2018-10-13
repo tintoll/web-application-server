@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
+import webserver.HttpSession;
 
 import java.util.Collection;
 
@@ -15,7 +16,7 @@ public class ListUserController extends AbstractController {
 
     @Override
     protected void doGet(HttpRequest request, HttpResponse response) {
-        if(!request.isLogin()) {
+        if(!isLogined(request.getSession())) {
             response.sendRedirect("/user/login.html");
             return;
         }
@@ -33,6 +34,14 @@ public class ListUserController extends AbstractController {
         sb.append("</table>");
 
         response.forwardBody(sb.toString());
+    }
+
+    private boolean isLogined(HttpSession session) {
+        Object user = session.getAttribute("user");
+        if (user == null) {
+            return false;
+        }
+        return true;
     }
 
 }
